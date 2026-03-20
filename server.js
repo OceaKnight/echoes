@@ -124,7 +124,7 @@ setInterval(createBackup, 24 * 60 * 60 * 1000);
    AUTH
    ============================================================ */
 
-const EDITOR_PASSWORD = "your_password_here";
+const EDITOR_PASSWORD = process.env.EDITOR_PASSWORD || "113111";
 
 app.post("/api/auth", (req, res) => {
     if (req.body.password === EDITOR_PASSWORD) {
