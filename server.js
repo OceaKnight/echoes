@@ -332,8 +332,7 @@ app.post("/api/drafts/:id/publish", (req, res) => {
    START
    ============================================================ */
 
-const PORT = process.env.PORT || 3000;
-
-app.listen(PORT, () => {
-    console.log(`Echoes server running at http://localhost:${PORT}`);
+const PORT = process.env.PORT;
+app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Echoes server running on port ${PORT}`);
 });
