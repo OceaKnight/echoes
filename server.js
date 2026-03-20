@@ -1,26 +1,62 @@
-const express  = require("express");
-const fs       = require("fs");
-const cors     = require("cors");
-const path     = require("path");
+const express        = require("express");
+const fs             = require("fs");
+const cors           = require("cors");
+const path           = require("path");
 const { v4: uuidv4 } = require("uuid");
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
-
-app.use((req, res, next) => {
-    res.setHeader("Cache-Control", "no-store");
-    next();
-});
-
-/* serve the website */
+app.use((req, res, next) => { res.setHeader("Cache-Control", "no-store"); next(); });
 app.use(express.static(path.join(__dirname)));
 
-/* file locations */
-const FRAGMENTS_FILE = path.join(__dirname, "data", "fragments.json");
-const DRAFTS_FILE    = path.join(__dirname, "data", "drafts.json");
-const BACKUP_DIR     = path.join(__dirname, "data", "backups");
+
+/* ============================================================
+   CONFIG
+   ============================================================ */
+
+const PORT            = process.env.PORT || 3000;
+const EDITOR_PASSWORD = process.env.EDITOR_PASSWORD;   /* set in Railway Variables */
+const FRAGMENTS_FILE  = path.join(__dirname, "data", "fragments.json");
+const DRAFTS_FILE     = path.join(__dirname, "data", "drafts.json");
+const BACKUP_DIR      = path.join(__dirname, "data", "backups");
+
+if (!EDITOR_PASSWORD) {
+    console.warn("[WARN] EDITOR_PASSWORD is not set — editor will be inaccessible.");
+}
+
+
+/* ============================================================
+   FILE HELPERS
+   ============================================================ */
+
+function readJSON(file, fallback = []) {
+    try {
+        if (!fs.existsSync(file)) fs.writeFileSync(file, JSON.stringify(fallback, null, 2));
+        return JSON.parse(fs.readFileSync(file, "utf8"));
+    } catch (err) {
+        console.error(`[ERROR] Failed to read ${file}:`, err.message);
+        return fallback;
+    }
+}
+
+function writeJSON(file, data) {
+    try {
+        fs.writeFileSync(file, JSON.stringify(data, null, 2));
+    } catch (err) {
+        console.error(`[ERROR] Failed to write ${file}:`, err.message);
+    }
+}
+
+const readFragments  = () => readJSON(FRAGMENTS_FILE, []);
+const writeFragments = (data) => writeJSON(FRAGMENTS_FILE, data);
+const readDrafts     = () => readJSON(DRAFTS_FILE, []);
+const writeDrafts    = (data) => writeJSON(DRAFTS_FILE, data);
+
+function calcWordCount(lines) {
+    return lines.join(" ").split(/\s+/).filter(Boolean).length;
+}
 
 
 /* ============================================================
@@ -40,39 +76,9 @@ function sanitize(str) {
 
 function sanitizeFragment(fragment) {
     if (fragment.title)  fragment.title  = sanitize(fragment.title);
-    if (fragment.lines)  fragment.lines  = fragment.lines.map(line => sanitize(line));
+    if (fragment.lines)  fragment.lines  = fragment.lines.map(sanitize);
     if (fragment.status) fragment.status = sanitize(fragment.status);
     return fragment;
-}
-
-
-/* ============================================================
-   HELPERS
-   ============================================================ */
-
-function readFragments() {
-    const data = fs.readFileSync(FRAGMENTS_FILE, "utf8");
-    return JSON.parse(data);
-}
-
-function writeFragments(data) {
-    fs.writeFileSync(FRAGMENTS_FILE, JSON.stringify(data, null, 2));
-}
-
-function readDrafts() {
-    if (!fs.existsSync(DRAFTS_FILE)) {
-        fs.writeFileSync(DRAFTS_FILE, "[]");
-    }
-    const data = fs.readFileSync(DRAFTS_FILE, "utf8");
-    return JSON.parse(data);
-}
-
-function writeDrafts(data) {
-    fs.writeFileSync(DRAFTS_FILE, JSON.stringify(data, null, 2));
-}
-
-function calcWordCount(lines) {
-    return lines.join(" ").split(/\s+/).filter(Boolean).length;
 }
 
 
@@ -81,41 +87,34 @@ function calcWordCount(lines) {
    ============================================================ */
 
 function createBackup() {
-    if (!fs.existsSync(BACKUP_DIR)) {
-        fs.mkdirSync(BACKUP_DIR, { recursive: true });
-    }
+    try {
+        if (!fs.existsSync(BACKUP_DIR)) fs.mkdirSync(BACKUP_DIR, { recursive: true });
 
-    const now   = new Date();
-    const stamp = now.toISOString().replace(/[:.]/g, "-").slice(0, 16);
+        const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 16);
 
-    /* backup fragments */
-    const fragBackup = path.join(BACKUP_DIR, `fragments_${stamp}.json`);
-    fs.copyFileSync(FRAGMENTS_FILE, fragBackup);
-    console.log(`[BACKUP] Created: fragments_${stamp}.json`);
+        fs.copyFileSync(FRAGMENTS_FILE, path.join(BACKUP_DIR, `fragments_${stamp}.json`));
+        console.log(`[BACKUP] fragments_${stamp}.json`);
 
-    /* backup drafts */
-    if (fs.existsSync(DRAFTS_FILE)) {
-        const draftBackup = path.join(BACKUP_DIR, `drafts_${stamp}.json`);
-        fs.copyFileSync(DRAFTS_FILE, draftBackup);
-        console.log(`[BACKUP] Created: drafts_${stamp}.json`);
-    }
-
-    /* keep only last 7 backups of each type */
-    ["fragments", "drafts"].forEach(type => {
-        const files = fs.readdirSync(BACKUP_DIR)
-            .filter(f => f.startsWith(`${type}_`))
-            .sort();
-
-        if (files.length > 7) {
-            files.slice(0, files.length - 7).forEach(f => {
-                fs.unlinkSync(path.join(BACKUP_DIR, f));
-                console.log(`[BACKUP] Removed old backup: ${f}`);
-            });
+        if (fs.existsSync(DRAFTS_FILE)) {
+            fs.copyFileSync(DRAFTS_FILE, path.join(BACKUP_DIR, `drafts_${stamp}.json`));
+            console.log(`[BACKUP] drafts_${stamp}.json`);
         }
-    });
+
+        ["fragments", "drafts"].forEach(type => {
+            const files = fs.readdirSync(BACKUP_DIR)
+                .filter(f => f.startsWith(`${type}_`))
+                .sort();
+            if (files.length > 7) {
+                files.slice(0, files.length - 7).forEach(f => {
+                    fs.unlinkSync(path.join(BACKUP_DIR, f));
+                });
+            }
+        });
+    } catch (err) {
+        console.error("[BACKUP ERROR]", err.message);
+    }
 }
 
-/* backup on startup and every 24 hours */
 createBackup();
 setInterval(createBackup, 24 * 60 * 60 * 1000);
 
@@ -124,34 +123,23 @@ setInterval(createBackup, 24 * 60 * 60 * 1000);
    AUTH
    ============================================================ */
 
-const EDITOR_PASSWORD = process.env.EDITOR_PASSWORD || "113111";
-
 app.post("/api/auth", (req, res) => {
-    if (req.body.password === EDITOR_PASSWORD) {
-        res.json({ success: true });
-    } else {
-        res.status(401).json({ success: false });
-    }
+    if (!EDITOR_PASSWORD) return res.status(503).json({ success: false, error: "Password not configured." });
+    if (req.body.password === EDITOR_PASSWORD) return res.json({ success: true });
+    res.status(401).json({ success: false });
 });
 
 
 /* ============================================================
-   GET all fragments
+   FRAGMENTS
    ============================================================ */
 
 app.get("/api/fragments", (req, res) => {
-    const fragments = readFragments();
-    res.json(fragments);
+    res.json(readFragments());
 });
-
-
-/* ============================================================
-   POST — publish new fragment
-   ============================================================ */
 
 app.post("/api/fragments", (req, res) => {
     sanitizeFragment(req.body);
-
     const fragments = readFragments();
     const wordCount = calcWordCount(req.body.lines);
 
@@ -164,46 +152,17 @@ app.post("/api/fragments", (req, res) => {
 
     fragments.push(req.body);
     writeFragments(fragments);
-
     res.json({ status: "saved", id: req.body.id });
 });
 
-
-/* ============================================================
-   DELETE fragment by ID
-   ============================================================ */
-
-app.delete("/api/fragments/:id", (req, res) => {
-    let fragments = readFragments();
-    const before  = fragments.length;
-
-    fragments = fragments.filter(f => f.id !== req.params.id);
-
-    if (fragments.length === before) {
-        return res.status(404).json({ error: "Fragment not found" });
-    }
-
-    writeFragments(fragments);
-    res.json({ status: "deleted" });
-});
-
-
-/* ============================================================
-   PUT — update fragment by ID
-   ============================================================ */
-
 app.put("/api/fragments/:id", (req, res) => {
     sanitizeFragment(req.body);
-
     const fragments = readFragments();
     const i         = fragments.findIndex(f => f.id === req.params.id);
 
-    if (i === -1) {
-        return res.status(404).json({ error: "Fragment not found" });
-    }
+    if (i === -1) return res.status(404).json({ error: "Fragment not found" });
 
-    const wordCount = calcWordCount(req.body.lines);
-
+    const wordCount  = calcWordCount(req.body.lines);
     req.body.id        = req.params.id;
     req.body.createdAt = req.body.createdAt || fragments[i].createdAt;
     req.body.updatedAt = new Date().toISOString();
@@ -212,28 +171,31 @@ app.put("/api/fragments/:id", (req, res) => {
 
     fragments[i] = req.body;
     writeFragments(fragments);
-
     res.json({ status: "updated" });
 });
 
+app.delete("/api/fragments/:id", (req, res) => {
+    let fragments = readFragments();
+    const before  = fragments.length;
+    fragments     = fragments.filter(f => f.id !== req.params.id);
 
-/* ============================================================
-   GET all drafts
-   ============================================================ */
+    if (fragments.length === before) return res.status(404).json({ error: "Fragment not found" });
 
-app.get("/api/drafts", (req, res) => {
-    const drafts = readDrafts();
-    res.json(drafts);
+    writeFragments(fragments);
+    res.json({ status: "deleted" });
 });
 
 
 /* ============================================================
-   POST — save new draft
+   DRAFTS
    ============================================================ */
+
+app.get("/api/drafts", (req, res) => {
+    res.json(readDrafts());
+});
 
 app.post("/api/drafts", (req, res) => {
     sanitizeFragment(req.body);
-
     const drafts = readDrafts();
 
     req.body.id        = uuidv4();
@@ -243,24 +205,15 @@ app.post("/api/drafts", (req, res) => {
 
     drafts.push(req.body);
     writeDrafts(drafts);
-
     res.json({ status: "saved", id: req.body.id });
 });
 
-
-/* ============================================================
-   PUT — update existing draft by ID
-   ============================================================ */
-
 app.put("/api/drafts/:id", (req, res) => {
     sanitizeFragment(req.body);
-
     const drafts = readDrafts();
     const i      = drafts.findIndex(d => d.id === req.params.id);
 
-    if (i === -1) {
-        return res.status(404).json({ error: "Draft not found" });
-    }
+    if (i === -1) return res.status(404).json({ error: "Draft not found" });
 
     req.body.id        = req.params.id;
     req.body.status    = "draft";
@@ -269,41 +222,25 @@ app.put("/api/drafts/:id", (req, res) => {
 
     drafts[i] = req.body;
     writeDrafts(drafts);
-
     res.json({ status: "updated" });
 });
-
-
-/* ============================================================
-   DELETE draft by ID
-   ============================================================ */
 
 app.delete("/api/drafts/:id", (req, res) => {
     let drafts   = readDrafts();
     const before = drafts.length;
+    drafts       = drafts.filter(d => d.id !== req.params.id);
 
-    drafts = drafts.filter(d => d.id !== req.params.id);
-
-    if (drafts.length === before) {
-        return res.status(404).json({ error: "Draft not found" });
-    }
+    if (drafts.length === before) return res.status(404).json({ error: "Draft not found" });
 
     writeDrafts(drafts);
     res.json({ status: "deleted" });
 });
 
-
-/* ============================================================
-   POST — publish a draft
-   ============================================================ */
-
 app.post("/api/drafts/:id/publish", (req, res) => {
-    let drafts = readDrafts();
-    const i    = drafts.findIndex(d => d.id === req.params.id);
+    const drafts = readDrafts();
+    const i      = drafts.findIndex(d => d.id === req.params.id);
 
-    if (i === -1) {
-        return res.status(404).json({ error: "Draft not found" });
-    }
+    if (i === -1) return res.status(404).json({ error: "Draft not found" });
 
     const draft     = drafts[i];
     const fragments = readFragments();
@@ -332,7 +269,6 @@ app.post("/api/drafts/:id/publish", (req, res) => {
    START
    ============================================================ */
 
-const PORT = process.env.PORT;
 app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Echoes server running on port ${PORT}`);
+    console.log(`Echoes running on port ${PORT}`);
 });
