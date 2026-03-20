@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Echoes</title>
+    <link rel="stylesheet" href="css/style.css">
+
+</head>
+
+<body>
+
+    <canvas id="rippleCanvas"></canvas>
+
+    <!-- Intro -->
+    <section class="intro">
+        <h1 class="title">echoes.</h1>
+        <p class="subtitle">fragments of a restless mind</p>
+    </section>
+
+    <!-- Random Button -->
+    <div class="randomContainer">
+        <button id="randomBtn">Discover a thought</button>
+    </div>
+
+    <!-- Search + Sort -->
+    <div id="searchWrapper">
+        <input id="searchInput" placeholder="Search fragments..." />
+        <button id="searchClear">✕</button>
+        <button id="sortBtn">Newest</button>
+    </div>
+
+    <!-- Fragment Timeline -->
+    <section id="fragmentContainer"></section>
+
+    <!-- Load More -->
+    <div id="loadMoreWrapper">
+        <button id="loadMoreBtn">load more</button>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p id="footerLine" class="footer-line"></p>
+        <p class="footer-name">— Red</p>
+    </footer>
+
+    <!-- Reader -->
+    <div id="readerView">
+        <button id="closeReader">← Back</button>
+        <h2 id="readerTitle"></h2>
+        <div id="readerContent"></div>
+    </div>
+
+    <!-- Editor -->
+    <section id="editorPanel">
+        <h2>Write Fragment</h2>
+        <input id="fragmentTitle" placeholder="Fragment Title">
+        <input type="datetime-local" id="fragmentDate">
+        <textarea id="fragmentText" placeholder="Write your fragment here..."></textarea>
+        <p id="autosaveStatus" class="autosave-Status"></p>
+        <button id="saveDraft">Save Draft</button>
+        <button id="publishFragment">Publish</button>
+        <h3>Your Drafts</h3>
+        <div id="draftList"></div>
+        <h3>All Fragments</h3>
+        <div id="fragmentManager"></div>
+        <button id="closeEditor">Close</button>
+    </section>
+
+    <script src="js/script.js"></script>
+
+</body>
+
+</html>

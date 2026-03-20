@@ -1,0 +1,464 @@
+/* ============================================================
+   BASE
+   ============================================================ */
+
+body {
+    background: #0b0b0b;
+    color: white;
+    margin: 0;
+    font-family: Georgia, serif;
+    overflow-x: hidden;
+}
+
+
+/* ============================================================
+   CANVAS
+   ============================================================ */
+
+#rippleCanvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    pointer-events: none;
+}
+
+
+/* ============================================================
+   INTRO
+   ============================================================ */
+
+.intro {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.title {
+    font-size: 60px;
+    letter-spacing: 6px;
+    opacity: 0;
+    animation: fadeIn 3s forwards;
+}
+
+.subtitle {
+    opacity: 0;
+    animation: fadeIn 5s forwards;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
+/* ============================================================
+   RANDOM BUTTON
+   ============================================================ */
+
+.randomContainer {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+#randomBtn {
+    background: transparent;
+    color: #555;
+    border: 1px solid #333;
+    padding: 10px 24px;
+    cursor: pointer;
+    font-family: Georgia, serif;
+    font-size: 14px;
+    letter-spacing: 1px;
+    border-radius: 6px;
+    transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+#randomBtn:hover {
+    color: white;
+    border-color: #777;
+}
+
+
+/* ============================================================
+   SEARCH + SORT
+   ============================================================ */
+
+#searchWrapper {
+    max-width: 800px;
+    margin: 0 auto 30px;
+    padding-left: 40px;
+    padding-right: 20px;
+    box-sizing: border-box;
+    display: flex;
+    gap: 8px;
+}
+
+#searchInput {
+    flex: 1;
+    background: #111;
+    border: 1px solid #333;
+    color: white;
+    padding: 10px 14px;
+    font-family: Georgia, serif;
+    font-size: 14px;
+    border-radius: 6px;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+#searchInput:focus {
+    border-color: #555;
+}
+
+#searchInput::placeholder {
+    color: #444;
+}
+
+#searchClear {
+    background: transparent;
+    border: 1px solid #333;
+    color: #555;
+    padding: 10px 14px;
+    cursor: pointer;
+    border-radius: 6px;
+    font-size: 12px;
+    transition: color 0.2s ease, border-color 0.2s ease;
+    display: none;
+}
+
+#searchClear:hover {
+    color: white;
+    border-color: #777;
+}
+
+#sortBtn {
+    background: transparent;
+    border: 1px solid #333;
+    color: #555;
+    padding: 10px 14px;
+    cursor: pointer;
+    border-radius: 6px;
+    font-family: Georgia, serif;
+    font-size: 13px;
+    letter-spacing: 1px;
+    white-space: nowrap;
+    transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+#sortBtn:hover {
+    color: white;
+    border-color: #777;
+}
+
+#sortBtn.active {
+    color: white;
+    border-color: #555;
+}
+
+.searchEmpty {
+    text-align: center;
+    color: #444;
+    font-size: 14px;
+    padding: 40px 0;
+    font-style: italic;
+}
+
+
+/* ============================================================
+   FRAGMENT TIMELINE
+   ============================================================ */
+
+#fragmentContainer {
+    max-width: 800px;
+    margin: 40px auto;
+    padding-left: 40px;
+    position: relative;
+}
+
+#fragmentContainer::before {
+    content: "";
+    position: absolute;
+    left: 12px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #222;
+}
+
+
+/* ============================================================
+   FRAGMENT CARDS
+   ============================================================ */
+
+.fragment {
+    position: relative;
+    padding: 20px;
+    margin: 25px 0;
+    background: #0f0f0f;
+    border-radius: 18px 24px 20px 22px;
+    cursor: pointer;
+    transition:
+        transform 0.12s ease-out,
+        box-shadow 0.25s ease;
+    will-change: transform;
+    transform-origin: center;
+}
+
+.fragment:hover {
+    background: #151515;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+}
+
+.fragment::before {
+    content: "";
+    position: absolute;
+    left: -33px;
+    top: 26px;
+    width: 10px;
+    height: 10px;
+    background: #777;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.fragment:hover::before {
+    background: white;
+    transform: scale(1.6);
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.7);
+}
+
+.fragmentPreview {
+    opacity: 0.8;
+    margin-top: 8px;
+}
+
+
+/* ============================================================
+   LOAD MORE
+   ============================================================ */
+
+#loadMoreWrapper {
+    max-width: 800px;
+    margin: 0 auto 60px;
+    padding-left: 40px;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+#loadMoreBtn {
+    display: none;
+    background: transparent;
+    color: #555;
+    border: 1px solid #333;
+    padding: 10px 28px;
+    cursor: pointer;
+    font-family: Georgia, serif;
+    font-size: 14px;
+    letter-spacing: 1px;
+    border-radius: 6px;
+    transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+#loadMoreBtn:hover {
+    color: white;
+    border-color: #777;
+}
+
+
+/* ============================================================
+   READER
+   ============================================================ */
+
+#readerView {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #0b0b0b;
+    padding: 80px 40px;
+    box-sizing: border-box;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    overflow-y: auto;
+    z-index: 3000;
+}
+
+#readerTitle {
+    max-width: 700px;
+    width: 100%;
+}
+
+#readerContent {
+    max-width: 700px;
+    width: 100%;
+    line-height: 1.8;
+    font-size: 20px;
+}
+
+#readerContent p {
+    margin-bottom: 18px;
+}
+
+.fragmentMeta {
+    font-size: 13px;
+    color: #555;
+    margin-bottom: 24px;
+    letter-spacing: 1px;
+}
+
+#closeReader {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+}
+
+
+/* ============================================================
+   EDITOR
+   ============================================================ */
+
+#editorPanel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    height: 100vh;
+    width: 560px;
+    background: #0f0f0f;
+    padding: 25px;
+    box-sizing: border-box;
+    border-left: 1px solid #333;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow-y: auto;
+    transform: translateX(100%);
+    transition: transform 0.35s ease;
+}
+
+#editorPanel.open {
+    transform: translateX(0);
+}
+
+#fragmentDate {
+    background: #1a1a1a;
+    color: white;
+    border: 1px solid #333;
+    padding: 8px;
+    border-radius: 6px;
+    width: 100%;
+    box-sizing: border-box;
+    font-family: Georgia, serif;
+    font-size: 14px;
+    color-scheme: dark;
+}
+
+.autosave-Status {
+    font-size: 12px;
+    color: #3fb950;
+    margin: 0;
+    min-height: 18px;
+}
+
+.draftRow {
+    display: flex;
+    justify-content: space-between;
+    margin: 6px 0;
+}
+
+.fragmentRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px;
+    border-bottom: 1px solid #333;
+    font-size: 14px;
+}
+
+.fragmentRow button {
+    margin-left: 6px;
+    background: #222;
+    color: white;
+    border: 1px solid #444;
+    padding: 4px 8px;
+    cursor: pointer;
+}
+
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+
+.footer {
+    margin-top: 100px;
+    padding: 60px 20px;
+    text-align: center;
+    opacity: 0.6;
+    font-size: 14px;
+}
+
+.footer-line {
+    margin-bottom: 10px;
+    font-style: italic;
+    letter-spacing: 1px;
+    opacity: 0;
+    transition: opacity 1.5s ease;
+}
+
+.footer-line.show {
+    opacity: 1;
+}
+
+.footer-name {
+    opacity: 0.7;
+}
+
+#fragmentText {
+    width: 100%;
+    height: 400px;
+    box-sizing: border-box;
+    resize: vertical;
+    background: #111;
+    color: white;
+    border: 1px solid #333;
+    padding: 14px;
+    font-family: Georgia, serif;
+    font-size: 15px;
+    line-height: 1.7;
+    border-radius: 6px;
+    outline: none;
+}
+
+#fragmentText:focus {
+    border-color: #555;
+}
+
+textarea#fragmentText {
+    width: 100% !important;
+    height: 400px !important;
+    min-height: 400px;
+    box-sizing: border-box;
+    resize: vertical;
+    background: #111;
+    color: white;
+    border: 1px solid #333;
+    padding: 14px;
+    font-family: Georgia, serif;
+    font-size: 15px;
+    line-height: 1.7;
+    border-radius: 6px;
+    outline: none;
+}
